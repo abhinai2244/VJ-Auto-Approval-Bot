@@ -124,7 +124,7 @@ async def bcast(_, m: Message):
     caption = None
 
     if response.photo:
-        media = response.photo[-1].file_id
+        media = response.photo.file_id  # Correct way to access the file_id of the photo
         caption = response.caption
     elif response.video:
         media = response.video.file_id
@@ -193,6 +193,7 @@ async def bcast(_, m: Message):
 👾 Blocked by `{blocked}` users.
 👻 Found `{deactivated}` deactivated users.
 """)
+
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast Forward ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

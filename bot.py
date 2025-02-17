@@ -98,34 +98,77 @@ async def dbtool(_, m : Message):
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @app.on_message(filters.command("bcast") & filters.user(cfg.SUDO))
-async def bcast(_, m : Message):
+async def bcast(_, m: Message):
+    key = InlineKeyboardMarkup(
+        [[
+            InlineKeyboardButton("📝 Text", callback_data="bcast_text"),
+            InlineKeyboardButton("📷 Photo", callback_data="bcast_photo"),
+            InlineKeyboardButton("🎥 Video", callback_data="bcast_video")
+        ]]
+    )
+    await m.reply_text("**What type of content do you want to broadcast?**", reply_markup=key)
+
+@app.on_callback_query(filters.regex("bcast_"))
+async def handle_broadcast(_, cb: CallbackQuery):
+    bcast_type = cb.data.split("_")[1]
+    
+    if bcast_type == "text":
+        await cb.message.reply_text("**Please send me the text to broadcast.**")
+        await cb.answer()
+        return
+
+    if bcast_type == "photo":
+        await cb.message.reply_text("**Please send me the photo with a caption to broadcast.**")
+        await cb.answer()
+        return
+
+    if bcast_type == "video":
+        await cb.message.reply_text("**Please send me the video with a caption to broadcast.**")
+        await cb.answer()
+        return
+
+@app.on_message(filters.user(cfg.SUDO) & filters.reply)
+async def send_broadcast(_, m: Message):
     allusers = users
     lel = await m.reply_text("`⚡️ Processing...`")
     success = 0
     failed = 0
     deactivated = 0
     blocked = 0
+
+    # Check the type of message being broadcasted
+    if m.reply_to_message.photo:
+        content_type = "photo"
+    elif m.reply_to_message.video:
+        content_type = "video"
+    elif m.reply_to_message.text:
+        content_type = "text"
+    else:
+        await lel.edit("**Unsupported content type. Please send text, photo, or video.**")
+        return
+
     for usrs in allusers.find():
         try:
             userid = usrs["user_id"]
-            #print(int(userid))
-            if m.command[0] == "bcast":
+            if content_type == "photo":
                 await m.reply_to_message.copy(int(userid))
-            success +=1
+            elif content_type == "video":
+                await m.reply_to_message.copy(int(userid))
+            elif content_type == "text":
+                await app.send_message(chat_id=int(userid), text=m.reply_to_message.text)
+            success += 1
         except FloodWait as ex:
             await asyncio.sleep(ex.value)
-            if m.command[0] == "bcast":
-                await m.reply_to_message.copy(int(userid))
         except errors.InputUserDeactivated:
-            deactivated +=1
+            deactivated += 1
             remove_user(userid)
         except errors.UserIsBlocked:
-            blocked +=1
+            blocked += 1
         except Exception as e:
-            print(e)
-            failed +=1
+            failed += 1
 
-    await lel.edit(f"✅Successfull to `{success}` users.\n❌ Faild to `{failed}` users.\n👾 Found `{blocked}` Blocked users \n👻 Found `{deactivated}` Deactivated users.")
+    await lel.edit(f"✅Successfully sent to `{success}` users.\n❌ Failed to `{failed}` users.\n👾 Blocked users: `{blocked}`\n👻 Deactivated users: `{deactivated}`.")
+
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast Forward ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

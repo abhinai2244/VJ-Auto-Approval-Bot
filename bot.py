@@ -100,7 +100,13 @@ async def bcast(_, m: Message):
     if not m.reply_to_message:
         await m.reply("Please reply to a message to broadcast.")
         return
-    allusers = users.find()
+
+    # Get all users
+    allusers = list(users.find())
+    if not allusers:
+        await m.reply("No users found in the database.")
+        return
+
     lel = await m.reply_text("`⚡️ Processing...`")
     success = 0
     failed = 0
@@ -108,23 +114,41 @@ async def bcast(_, m: Message):
     blocked = 0
 
     for usrs in allusers:
-        userid = usrs["user_id"]
+        userid = usrs.get("user_id")
+        if not userid:
+            failed += 1
+            continue
         try:
+            # Broadcast message
             await m.reply_to_message.copy(int(userid))
             success += 1
         except FloodWait as ex:
+            print(f"FloodWait: Sleeping for {ex.value} seconds.")
             await asyncio.sleep(ex.value)
-            await m.reply_to_message.copy(int(userid))
+            try:
+                await m.reply_to_message.copy(int(userid))
+                success += 1
+            except Exception as inner_ex:
+                print(f"Error after FloodWait for user {userid}: {inner_ex}")
+                failed += 1
         except errors.InputUserDeactivated:
+            print(f"User {userid} is deactivated.")
             deactivated += 1
             remove_user(userid)
         except errors.UserIsBlocked:
+            print(f"Bot is blocked by user {userid}.")
             blocked += 1
         except Exception as e:
-            print(f"Error with user {userid}: {e}")
+            print(f"Failed to send to user {userid}: {e}")
             failed += 1
 
-    await lel.edit(f"✅ Successfully sent to `{success}` users.\n❌ Failed to `{failed}` users.\n👾 Blocked by `{blocked}` users.\n👻 Found `{deactivated}` deactivated users.")
+    await lel.edit(f"""
+✅ Successfully sent to `{success}` users.
+❌ Failed to send to `{failed}` users.
+👾 Blocked by `{blocked}` users.
+👻 Found `{deactivated}` deactivated users.
+""")
+
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast Forward ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

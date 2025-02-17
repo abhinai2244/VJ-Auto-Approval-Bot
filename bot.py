@@ -55,12 +55,12 @@ async def op(_, m :Message):
         return 
     keyboard = InlineKeyboardMarkup(
         [[
-            InlineKeyboardButton("🗯 Channel", url="https://t.me/vj_botz"),
-            InlineKeyboardButton("💬 Support", url="https://t.me/vj_bot_disscussion")
+            InlineKeyboardButton("🗯 Channel", url="https://t.me/ABCMODS"),
+            InlineKeyboardButton("💬 Support", url="https://t.me/ABCDEVELOPER")
         ]]
     )
     add_user(m.from_user.id)
-    await m.reply_photo("https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzJvb2N3Yjh5Z3E1cmdmNGtzOXgxa2hoN3VxbzA5a3RlZ2Fvd2Y1YyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3kuSo744UIPJjcJUEn/giphy.gif", caption="**🦊 Hello {}!\nI'm an auto approve [Admin Join Requests]({}) Bot.\nI can approve users in Groups/Channels.Add me to your chat and promote me to admin with add members permission.\n\n__Powered By : @ABCMODS__**".format(m.from_user.mention, "https://t.me/telegram/153"), reply_markup=keyboard)
+    await m.reply_photo("https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExOWRvbGo2ejhjbWtoNHdkc2FyODRxNW13ZnczOXlzanQ1eTV3d2toNCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qeec72wDJskg9udUJ3/giphy.gif", caption="**🦊 Hello {}!\nI'm an auto approve [Admin Join Requests]({}) Bot.\nI can approve users in Groups/Channels.Add me to your chat and promote me to admin with add members permission.\n\n__Powered By : @ABCMODS__**".format(m.from_user.mention, "https://t.me/telegram/153"), reply_markup=keyboard)
     
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ callback ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

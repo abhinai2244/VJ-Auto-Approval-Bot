@@ -151,11 +151,11 @@ async def bcast(_, m: Message):
             except Exception as inner_ex:
                 print(f"Error after FloodWait for user {userid}: {inner_ex}")
                 failed_count += 1
-        except errors.InputUserDeactivated:
+        except InputUserDeactivated:
             print(f"User {userid} is deactivated.")
             deactivated += 1
             remove_user(userid)
-        except errors.UserIsBlocked:
+        except UserIsBlocked:
             print(f"Bot is blocked by user {userid}.")
             blocked += 1
         except Exception as e:
@@ -168,8 +168,6 @@ async def bcast(_, m: Message):
 👾 Blocked by `{blocked}` users.
 👻 Found `{deactivated}` deactivated users.
 """)
-
-
 
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast Forward ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

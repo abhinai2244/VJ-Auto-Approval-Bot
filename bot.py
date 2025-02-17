@@ -118,8 +118,19 @@ async def bcast(_, m: Message):
         await prompt_message.edit("Broadcast cancelled.")
         return
 
-    # Retrieve the broadcast message
+    # Get the message or media to broadcast
     broadcast_message = response.text
+    media = None
+    caption = None
+
+    if response.photo:
+        media = response.photo[-1].file_id
+        caption = response.caption
+    elif response.video:
+        media = response.video.file_id
+        caption = response.caption
+
+    # Get all users from the database
     allusers = list(users.find())
 
     if not allusers:
@@ -139,23 +150,37 @@ async def bcast(_, m: Message):
             continue
 
         try:
-            # Send the broadcast message
-            await app.send_message(userid, broadcast_message)
+            if media:
+                # If media is provided, send it with the caption
+                if response.photo:
+                    await app.send_photo(userid, media, caption=caption)
+                elif response.video:
+                    await app.send_video(userid, media, caption=caption)
+            else:
+                # Send only the message text if no media is provided
+                await app.send_message(userid, broadcast_message)
             success_count += 1
         except FloodWait as ex:
             print(f"FloodWait: Sleeping for {ex.value} seconds.")
             await asyncio.sleep(ex.value)
             try:
-                await app.send_message(userid, broadcast_message)
+                # Retry sending the message after sleep
+                if media:
+                    if response.photo:
+                        await app.send_photo(userid, media, caption=caption)
+                    elif response.video:
+                        await app.send_video(userid, media, caption=caption)
+                else:
+                    await app.send_message(userid, broadcast_message)
                 success_count += 1
             except Exception as inner_ex:
                 print(f"Error after FloodWait for user {userid}: {inner_ex}")
                 failed_count += 1
-        except InputUserDeactivated:
+        except errors.InputUserDeactivated:
             print(f"User {userid} is deactivated.")
             deactivated += 1
             remove_user(userid)
-        except UserIsBlocked:
+        except errors.UserIsBlocked:
             print(f"Bot is blocked by user {userid}.")
             blocked += 1
         except Exception as e:
@@ -168,7 +193,6 @@ async def bcast(_, m: Message):
 👾 Blocked by `{blocked}` users.
 👻 Found `{deactivated}` deactivated users.
 """)
-
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast Forward ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

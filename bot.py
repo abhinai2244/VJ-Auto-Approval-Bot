@@ -97,36 +97,40 @@ async def dbtool(_, m: Message):
 
 @app.on_message(filters.command("bcast") & filters.user(cfg.SUDO))
 async def bcast(_, m: Message):
-    if not m.reply_to_message:
-        await m.reply("Please reply to a message to broadcast.")
+    # Extract the message text after the /bcast command
+    if len(m.command) < 2:
+        await m.reply("Usage: `/bcast Your Message Here`", parse_mode=enums.ParseMode.MARKDOWN)
         return
 
-    # Get all users
+    # Get the message to broadcast
+    broadcast_message = m.text.split(" ", 1)[1]
     allusers = list(users.find())
+    
     if not allusers:
         await m.reply("No users found in the database.")
         return
 
-    lel = await m.reply_text("`⚡️ Processing...`")
+    lel = await m.reply_text("`⚡️ Starting broadcast...`")
     success = 0
     failed = 0
     deactivated = 0
     blocked = 0
 
-    for usrs in allusers:
-        userid = usrs.get("user_id")
+    for user in allusers:
+        userid = user.get("user_id")
         if not userid:
             failed += 1
             continue
+
         try:
-            # Broadcast message
-            await m.reply_to_message.copy(int(userid))
+            # Send the broadcast message
+            await app.send_message(chat_id=int(userid), text=broadcast_message)
             success += 1
         except FloodWait as ex:
             print(f"FloodWait: Sleeping for {ex.value} seconds.")
             await asyncio.sleep(ex.value)
             try:
-                await m.reply_to_message.copy(int(userid))
+                await app.send_message(chat_id=int(userid), text=broadcast_message)
                 success += 1
             except Exception as inner_ex:
                 print(f"Error after FloodWait for user {userid}: {inner_ex}")
@@ -148,6 +152,7 @@ async def bcast(_, m: Message):
 👾 Blocked by `{blocked}` users.
 👻 Found `{deactivated}` deactivated users.
 """)
+
 
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast Forward ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

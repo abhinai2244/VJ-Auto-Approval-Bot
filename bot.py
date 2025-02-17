@@ -97,44 +97,58 @@ async def dbtool(_, m: Message):
 
 @app.on_message(filters.command("bcast") & filters.user(cfg.SUDO))
 async def bcast(_, m: Message):
-    # Extract the message text after the /bcast command
-    if len(m.command) < 2:
-        await m.reply("Usage: /bcast Your Message Here", parse_mode=enums.ParseMode.MARKDOWN)
+    # Prompt for the broadcast message
+    keyboard = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("CANCEL", callback_data="cancel_broadcast")],
+            [InlineKeyboardButton("CLOSE", callback_data="close_broadcast")]
+        ]
+    )
+    prompt_message = await m.reply("Give me a broadcast message:", reply_markup=keyboard)
+
+    # Wait for the admin's response
+    response = await app.listen(m.chat.id, timeout=300)
+
+    if response.text.lower() == "cancel":
+        await prompt_message.edit("Broadcast cancelled.")
         return
 
-    # Get the message to broadcast
-    broadcast_message = m.text.split(" ", 1)[1]
+    broadcast_message = response.text
     allusers = list(users.find())
-    
+
     if not allusers:
         await m.reply("No users found in the database.")
         return
 
-    lel = await m.reply_text("⚡️ Starting broadcast...")
-    success = 0
-    failed = 0
+    lel = await m.reply_text("`⚡️ Starting broadcast...`")
+    success_count = 0
+    failed_count = 0
     deactivated = 0
     blocked = 0
 
     for user in allusers:
         userid = user.get("user_id")
         if not userid:
-            failed += 1
+            failed_count += 1
             continue
 
         try:
-            # Send the broadcast message
-            await app.send_message(chat_id=int(userid), text=broadcast_message)
-            success += 1
+            if response.photo:
+                await app.send_photo(userid, response.photo[-1].file_id, caption=response.caption)
+            elif response.video:
+                await app.send_video(userid, response.video.file_id, caption=response.caption)
+            else:
+                await app.send_message(userid, broadcast_message)
+            success_count += 1
         except FloodWait as ex:
             print(f"FloodWait: Sleeping for {ex.value} seconds.")
             await asyncio.sleep(ex.value)
             try:
                 await app.send_message(chat_id=int(userid), text=broadcast_message)
-                success += 1
+                success_count += 1
             except Exception as inner_ex:
                 print(f"Error after FloodWait for user {userid}: {inner_ex}")
-                failed += 1
+                failed_count += 1
         except errors.InputUserDeactivated:
             print(f"User {userid} is deactivated.")
             deactivated += 1
@@ -144,13 +158,13 @@ async def bcast(_, m: Message):
             blocked += 1
         except Exception as e:
             print(f"Failed to send to user {userid}: {e}")
-            failed += 1
+            failed_count += 1
 
     await lel.edit(f"""
-✅ Successfully sent to {success} users.
-❌ Failed to send to {failed} users.
-👾 Blocked by {blocked} users.
-👻 Found {deactivated} deactivated users.
+✅ Successfully sent to `{success_count}` users.
+❌ Failed to send to `{failed_count}` users.
+👾 Blocked by `{blocked}` users.
+👻 Found `{deactivated}` deactivated users.
 """)
 
 

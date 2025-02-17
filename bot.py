@@ -107,12 +107,18 @@ async def bcast(_, m: Message):
     prompt_message = await m.reply("Give me a broadcast message:", reply_markup=keyboard)
 
     # Wait for the admin's response
-    response = await app.listen(m.chat.id, timeout=300)
+    try:
+        response = await app.listen(m.chat.id, timeout=300)
+    except asyncio.TimeoutError:
+        await prompt_message.edit("Timeout: No response received. Broadcast cancelled.")
+        return
 
-    if response.text.lower() == "cancel":
+    # Check if the admin canceled the process
+    if response.text and response.text.lower() == "cancel":
         await prompt_message.edit("Broadcast cancelled.")
         return
 
+    # Retrieve the broadcast message
     broadcast_message = response.text
     allusers = list(users.find())
 
@@ -133,18 +139,14 @@ async def bcast(_, m: Message):
             continue
 
         try:
-            if response.photo:
-                await app.send_photo(userid, response.photo[-1].file_id, caption=response.caption)
-            elif response.video:
-                await app.send_video(userid, response.video.file_id, caption=response.caption)
-            else:
-                await app.send_message(userid, broadcast_message)
+            # Send the broadcast message
+            await app.send_message(userid, broadcast_message)
             success_count += 1
         except FloodWait as ex:
             print(f"FloodWait: Sleeping for {ex.value} seconds.")
             await asyncio.sleep(ex.value)
             try:
-                await app.send_message(chat_id=int(userid), text=broadcast_message)
+                await app.send_message(userid, broadcast_message)
                 success_count += 1
             except Exception as inner_ex:
                 print(f"Error after FloodWait for user {userid}: {inner_ex}")
@@ -166,6 +168,7 @@ async def bcast(_, m: Message):
 👾 Blocked by `{blocked}` users.
 👻 Found `{deactivated}` deactivated users.
 """)
+
 
 
 

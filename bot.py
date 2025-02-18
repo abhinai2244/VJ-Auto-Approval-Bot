@@ -99,38 +99,61 @@ async def dbtool(_, m : Message):
 
 @app.on_message(filters.command("bcast") & filters.user(cfg.SUDO))
 async def bcast(_, m: Message):
-    # Get the text after the /bcast command
-    broadcast_text = " ".join(m.command[1:])
-    
-    if not broadcast_text:
-        await m.reply_text("**❌ Please provide the text to broadcast after the /bcast command.**")
-        return
+    key = InlineKeyboardMarkup(
+        [[
+            InlineKeyboardButton("📝 Text", callback_data="bcast_text")
+        ]])
+    await m.reply_text("**What type of content do you want to broadcast?**", reply_markup=key)
 
-    lel = await m.reply_text("`⚡️ Processing...`")
+
+@app.on_message(filters.user(cfg.SUDO) & filters.command("bcast") & filters.reply)
+async def send_broadcast(_, m: Message):
+    allusers = users  # Assuming 'users' is your MongoDB collection
+    lel = await m.reply_text("`⚡️ Processing...`")  # Message saying "Processing..."
+
     success = 0
     failed = 0
     deactivated = 0
     blocked = 0
 
-    # Loop through all users in the database and send the broadcast content
-    for usrs in allusers.find():
-        try:
-            userid = usrs["user_id"]
-            # Send the broadcast text message to each user
-            await app.send_message(chat_id=int(userid), text=broadcast_text)
-            success += 1
-        except FloodWait as ex:
-            await asyncio.sleep(ex.value)
-        except errors.InputUserDeactivated:
-            deactivated += 1
-            remove_user(userid)
-        except errors.UserIsBlocked:
-            blocked += 1
-        except Exception as e:
-            failed += 1
+    # Check if the user replied with text
+    if m.reply_to_message.text:
+        content_type = "text"
+        broadcast_content = m.reply_to_message.text
+    else:
+        await lel.edit("**Unsupported content type. Please send text only.**")
+        return
 
-    # Send a summary of the broadcast result
-    await lel.edit(f"✅ Successfully sent to `{success}` users.\n❌ Failed to `{failed}` users.\n👾 Blocked users: `{blocked}`\n👻 Deactivated users: `{deactivated}`")
+    # Loop through all users in the database and send the broadcast content
+    try:
+        total_users = all_users()
+        if total_users == 0:
+            await lel.edit("**No users found in the database.**")
+            return
+
+        for usrs in allusers.find():
+            try:
+                user_id = usrs["user_id"]
+                # Sending the text message to each user
+                await app.send_message(chat_id=int(user_id), text=broadcast_content)
+                success += 1
+            except FloodWait as ex:
+                await asyncio.sleep(ex.value)
+            except errors.InputUserDeactivated:
+                deactivated += 1
+                remove_user(user_id)
+            except errors.UserIsBlocked:
+                blocked += 1
+            except Exception as e:
+                print(f"Error sending message to {user_id}: {str(e)}")
+                failed += 1
+
+        # Send the result summary after processing
+        await lel.edit(f"✅ Successfully sent to `{success}` users.\n❌ Failed to send to `{failed}` users.\n👾 Blocked users: `{blocked}`\n👻 Deactivated users: `{deactivated}`.")
+
+    except Exception as e:
+        await lel.edit(f"❌ Something went wrong: {str(e)}")
+
 
 
 

@@ -129,22 +129,22 @@ async def handle_broadcast(_, cb: CallbackQuery):
             blocked = 0
 
             # Get all users from the database
-            allusers = users
+            allusers = all_users()
 
             # Check if the database is empty
-            total_users = all_users()
+            total_users = len(allusers)
             if total_users == 0:
                 await lel.edit("**No users found in the database.**")
                 return
 
             # Loop through all users and send the broadcast text
-            for usrs in allusers.find():
+            for usrs in allusers:
                 try:
                     user_id = usrs["user_id"]
                     # Send the text to the user
                     await app.send_message(chat_id=int(user_id), text=broadcast_text)
                     success += 1
-                except FloodWait as ex:
+                except errors.FloodWait as ex:
                     await asyncio.sleep(ex.value)
                 except errors.InputUserDeactivated:
                     deactivated += 1
@@ -156,7 +156,6 @@ async def handle_broadcast(_, cb: CallbackQuery):
 
             # Send a summary of the broadcast result
             await lel.edit(f"✅ Successfully sent to `{success}` users.\n❌ Failed to send to `{failed}` users.\n👾 Blocked users: `{blocked}`\n👻 Deactivated users: `{deactivated}`.")
-
 
 
 

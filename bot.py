@@ -99,56 +99,25 @@ async def dbtool(_, m : Message):
 
 @app.on_message(filters.command("bcast") & filters.user(cfg.SUDO))
 async def bcast(_, m: Message):
-    key = InlineKeyboardMarkup(
-        [[
-            InlineKeyboardButton("📝 Text", callback_data="bcast_text"),
-            InlineKeyboardButton("📷 Photo", callback_data="bcast_photo")
-        ]]
-    )
-    await m.reply_text("**What type of content do you want to broadcast?**", reply_markup=key)
-
-@app.on_callback_query(filters.regex("bcast_"))
-async def handle_broadcast(_, cb: CallbackQuery):
-    bcast_type = cb.data.split("_")[1]
+    # Get the text after the /bcast command
+    broadcast_text = " ".join(m.command[1:])
     
-    if bcast_type == "text":
-        await cb.message.reply_text("**Please send me the text to broadcast.**")
-        await cb.answer()
+    if not broadcast_text:
+        await m.reply_text("**❌ Please provide the text to broadcast after the /bcast command.**")
         return
 
-    if bcast_type == "photo":
-        await cb.message.reply_text("**Please send me the photo with a caption to broadcast.**")
-        await cb.answer()
-        return
-
-@app.on_message(filters.user(cfg.SUDO) & filters.reply)
-async def send_broadcast(_, m: Message):
-    allusers = users
     lel = await m.reply_text("`⚡️ Processing...`")
     success = 0
     failed = 0
     deactivated = 0
     blocked = 0
 
-    # Check if the user has replied with either a photo or text
-    if m.reply_to_message.photo:
-        content_type = "photo"
-    elif m.reply_to_message.text:
-        content_type = "text"
-    else:
-        await lel.edit("**Unsupported content type. Please send text or photo.**")
-        return
-
     # Loop through all users in the database and send the broadcast content
     for usrs in allusers.find():
         try:
             userid = usrs["user_id"]
-            if content_type == "photo":
-                # Send the photo with caption to each user
-                await m.reply_to_message.copy(int(userid))
-            elif content_type == "text":
-                # Send the text to each user
-                await app.send_message(chat_id=int(userid), text=m.reply_to_message.text)
+            # Send the broadcast text message to each user
+            await app.send_message(chat_id=int(userid), text=broadcast_text)
             success += 1
         except FloodWait as ex:
             await asyncio.sleep(ex.value)
@@ -161,7 +130,8 @@ async def send_broadcast(_, m: Message):
             failed += 1
 
     # Send a summary of the broadcast result
-    await lel.edit(f"✅ Successfully sent to `{success}` users.\n❌ Failed to `{failed}` users.\n👾 Blocked users: `{blocked}`\n👻 Deactivated users: `{deactivated}`.")
+    await lel.edit(f"✅ Successfully sent to `{success}` users.\n❌ Failed to `{failed}` users.\n👾 Blocked users: `{blocked}`\n👻 Deactivated users: `{deactivated}`")
+
 
 
 

@@ -56,7 +56,8 @@ async def op(_, m: Message):
         ]]
     )
     add_user(m.from_user.id)
-    await m.reply_photo("https://ibb.co/TqFrVzZZ", caption=f"**🦊 Hello {m.from_user.mention}!\nI'm an auto-approve [Admin Join Requests]({}) Bot.\nI can approve users in Groups/Channels. Add me to your chat and promote me to admin with add members permission.\n\n__Powered by: @ABCMODS__**".format("https://t.me/telegram/153"), reply_markup=keyboard)
+ await m.reply_photo("https://ibb.co/TqFrVzZZ", caption=f"**🦊 Hello {m.from_user.mention}!\nI'm an auto-approve [Admin Join Requests](https://t.me/telegram/153) Bot.\nI can approve users in Groups/Channels. Add me to your chat and promote me to admin with add members permission.\n\n__Powered by: @ABCMODS__**", reply_markup=keyboard)
+
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Callback ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

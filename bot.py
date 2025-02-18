@@ -97,6 +97,21 @@ async def dbtool(_, m : Message):
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+app = Client("my_bot")
+
+# Database helpers (assuming you have a MongoDB client set up)
+users = client['main']['users']
+
+# Get all users from the database
+def all_users():
+    user = users.find({})
+    return list(user)
+
+# Remove user from database
+def remove_user(user_id):
+    users.delete_one({"user_id": str(user_id)})
+
+
 @app.on_message(filters.command("bcast") & filters.user(cfg.SUDO))
 async def bcast(_, m: Message):
     # Inline buttons for selecting the type of content

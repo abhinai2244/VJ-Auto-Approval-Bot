@@ -114,51 +114,34 @@ async def dbtool(_, m: Message):
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Broadcast ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @app.on_message(filters.command("bcast") & filters.user(cfg.SUDO))
-async def bcast(_, m: Message):
-    key = InlineKeyboardMarkup(
-        [[
-            InlineKeyboardButton("📝 Text", callback_data="bcast_text")
-        ]]
-    )
-    await m.reply_text("**What type of content do you want to broadcast?**", reply_markup=key)
+async def bcast(_, m : Message):
+    allusers = users
+    lel = await m.reply_text("`⚡️ Processing...`")
+    success = 0
+    failed = 0
+    deactivated = 0
+    blocked = 0
+    for usrs in allusers.find():
+        try:
+            userid = usrs["user_id"]
+            #print(int(userid))
+            if m.command[0] == "bcast":
+                await m.reply_to_message.copy(int(userid))
+            success +=1
+        except FloodWait as ex:
+            await asyncio.sleep(ex.value)
+            if m.command[0] == "bcast":
+                await m.reply_to_message.copy(int(userid))
+        except errors.InputUserDeactivated:
+            deactivated +=1
+            remove_user(userid)
+        except errors.UserIsBlocked:
+            blocked +=1
+        except Exception as e:
+            print(e)
+            failed +=1
 
-@app.on_callback_query(filters.regex("bcast_"))
-async def handle_broadcast(_, cb: CallbackQuery):
-    bcast_type = cb.data.split("_")[1]
-
-    if bcast_type == "text":
-        await cb.message.edit_text("**Please send me the text you want to broadcast to all users.**")
-        await cb.answer()
-
-        @app.on_message(filters.user(cb.from_user.id) & filters.text)
-        async def handle_text_reply(_, msg: Message):
-            broadcast_text = msg.text
-            lel = await msg.reply_text("`⚡️ Processing...`")
-
-            success, failed, deactivated, blocked = 0, 0, 0, 0
-            allusers = users.find()
-
-            for user in allusers:
-                try:
-                    user_id = user["user_id"]
-                    await app.send_message(chat_id=int(user_id), text=broadcast_text)
-                    success += 1
-                except FloodWait as ex:
-                    await asyncio.sleep(ex.value)
-                except errors.InputUserDeactivated:
-                    deactivated += 1
-                    remove_user(user_id)
-                except errors.UserIsBlocked:
-                    blocked += 1
-                except Exception:
-                    failed += 1
-
-            await lel.edit(
-                f"✅ Successfully sent to `{success}` users.\n"
-                f"❌ Failed to send to `{failed}` users.\n"
-                f"👾 Blocked users: `{blocked}`\n"
-                f"👻 Deactivated users: `{deactivated}`."
-            )
+    await lel.edit(f"✅Successfull to `{success}` users.\n❌ Faild to `{failed}` users.\n👾 Found `{blocked}` Blocked users \n👻 Found `{deactivated}` Deactivated users.")
 
 #━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Forward Broadcast ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
